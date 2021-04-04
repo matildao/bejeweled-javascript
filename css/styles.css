@@ -1,0 +1,35 @@
+@import url("https://fonts.googleapis.com/css2?family=Questrial&display=swap");
+
+body {
+	margin: 5rem;
+	font-family: "Questrial", sans-serif;
+}
+
+.gamearea {
+	background-color: rgba(128, 128, 128, 0.139);
+	position: relative;
+	width: 700px;
+	height: 700px;
+}
+
+.gamearea div:hover {
+	cursor: pointer;
+}
+
+.container {
+	display: flex;
+	flex-direction: row;
+}
+
+#score {
+	font-size: 40pt;
+	margin: 1rem;
+}
+
+.slide-animation {
+	transition-duration: 0.5s;
+}
+
+.delete-animation {
+	transition-duration: 0.5s;
+}
