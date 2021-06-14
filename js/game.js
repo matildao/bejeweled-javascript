@@ -5,8 +5,8 @@ let tileId = 0;
 var selectedFirst = null;
 var selectedSecond = null;
 
-var prev1 = null;
-var prev2 = null;
+var prevSelectedFirst = null;
+var prevSelectedSecond = null;
 
 function turnStyleToPos(style) {
 	return parseInt(style.replace("px", ""));
@@ -43,35 +43,51 @@ function isAdjacent() {
 	return false;
 }
 
-function checkMatching(tileX, tileY, gemType) {
-	const matching = [];
-	const checkX = 2 * 70;
+function checkMatchingTiles(tile, behind, next, gemType) {
+	if (!tile || !behind || !next) return false;
 
-	for (let i = tileX - checkX; i <= tileX + checkX; i += 70) {
+	if (tile.gem === gemType && behind.gem === gemType && next.gem === gemType) {
+		return true;
+	}
+
+	return false;
+}
+
+function checkMatching(tileX, tileY, gemType) {
+	const matchingX = [];
+	const matchingY = [];
+	const allMatches = [];
+
+	const check = 2 * 70;
+
+	for (let i = tileX - check; i <= tileX + check; i += 70) {
 		const checkTile = document.elementFromPoint(i, tileY);
 		const checkNext = document.elementFromPoint(i + 70, tileY);
 		const checkBehind = document.elementFromPoint(i - 70, tileY);
 
-		if (checkTile.gem === gemType && checkNext.gem === gemType) {
-			matching.push(checkTile);
-		} else if (
-			checkBehind !== null &&
-			checkBehind.gem === gemType &&
-			checkTile.gem === gemType
-		) {
-			matching.push(checkTile);
-		} else if (
-			checkBehind !== null &&
-			checkBehind.gem === gemType &&
-			checkNext.gem === gemType &&
-			checkNext.gem === gemType
-		)
-			matching.push(checkTile);
+		if (checkMatchingTiles(checkTile, checkNext, checkBehind, gemType)) {
+			matchingX.push(checkTile, checkBehind, checkNext);
+		}
 	}
 
-	matching.forEach((element) => {
-		element.remove();
-	});
+	for (let i = tileY - check; i <= tileY + check; i += 70) {
+		const checkTile = document.elementFromPoint(tileX, i);
+		const checkNext = document.elementFromPoint(tileX, i + 70);
+		const checkBehind = document.elementFromPoint(tileX, i - 70);
+
+		if (checkMatchingTiles(checkTile, checkNext, checkBehind, gemType)) {
+			matchingY.push(checkTile, checkBehind, checkNext);
+		}
+	}
+
+	if (matchingX.length >= 3) allMatches.push(...matchingX);
+	if (matchingY.length >= 3) allMatches.push(...matchingY);
+
+	return allMatches;
+}
+
+function onlyUnique(value, index, self) {
+	return self.indexOf(value) === index;
 }
 
 function gemClicked(value) {
@@ -86,7 +102,19 @@ function gemClicked(value) {
 		if (isAdjacent() === true) {
 			swapTiles();
 			setTimeout(function () {
-				checkMatching(test.left, test.top, prev2.gem);
+				const matches = checkMatching(
+					test.left,
+					test.top,
+					prevSelectedFirst.gem
+				);
+
+				if (matches.length === 0) {
+					swapBackTiles();
+				} else {
+					matches.forEach((match) => {
+						match.remove();
+					});
+				}
 			}, 500);
 		} else {
 			console.log("is not adjacent");
@@ -97,13 +125,19 @@ function gemClicked(value) {
 }
 
 function swapBackTiles() {
-	[prev1.style.left, prev2.style.left] = [prev2.style.left, prev1.style.left];
-	[prev1.style.top, prev2.style.top] = [prev2.style.top, prev1.style.top];
+	[prevSelectedFirst.style.left, prevSelectedSecond.style.left] = [
+		prevSelectedSecond.style.left,
+		prevSelectedFirst.style.left,
+	];
+	[prevSelectedFirst.style.top, prevSelectedSecond.style.top] = [
+		prevSelectedSecond.style.top,
+		prevSelectedFirst.style.top,
+	];
 }
 
 function swapTiles() {
-	prev1 = selectedSecond;
-	prev2 = selectedFirst;
+	prevSelectedFirst = selectedFirst;
+	prevSelectedSecond = selectedSecond;
 
 	[selectedFirst.style.left, selectedSecond.style.left] = [
 		selectedSecond.style.left,
@@ -137,7 +171,16 @@ function generateBoard() {
 				"grey",
 			];
 			const randomNumber = Math.floor(Math.random() * tileImages.length);
-			const image = tileImages[randomNumber];
+			let image = tileImages[randomNumber];
+
+			// if (checkMatching(x, y, image).length > 0) {
+			// 	console.log("HEJ");
+			// 	let colorIndex = tileImages.indexOf(image);
+			// 	let newColors = tileImages.splice(colorIndex);
+
+			// 	const newRandom = Math.floor(Math.random() * newColors.length);
+			// 	image = newColors[newRandom];
+			// }
 
 			const div = document.createElement("div");
 
@@ -147,7 +190,7 @@ function generateBoard() {
 			div.style.left = `${x}px`;
 			div.style.position = "absolute";
 			div.style.padding = "5px";
-			div.style.backgroundImage = `url(${image}.png)`;
+			div.style.backgroundImage = `url(./image/${image}.png)`;
 			div.style.backgroundSize = "contain";
 			div.style.backgroundRepeat = "no-repeat";
 			div.style.backgroundPosition = "center";
